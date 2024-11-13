@@ -240,120 +240,120 @@ class LUTViewModel: ObservableObject, FilterModel  {
 //        return inputUIImage
 //    }
     
-//    func applyLUTFilter(inputUIImage: UIImage) -> UIImage? {
-//        // 1. Early validation
-//        guard let inputCGImage = inputUIImage.cgImage,
-//              let originalFileURL = self.currentLUTItem.fileURL,
-//              let lutImage = UIImage(contentsOfFile: originalFileURL.path) else {
-//            print("Failed to load input image or LUT image.")
-//            return nil
-//        }
-//        
-//        // 2. Optimize color cube data creation
-//        let colorCubeData: [UInt8] = vertices.flatMap { vertex in
-//            [UInt8(min(max(vertex.x * 255.0, 0), 255)),
-//             UInt8(min(max(vertex.y * 255.0, 0), 255)),
-//             UInt8(min(max(vertex.z * 255.0, 0), 255)),
-//             255]
-//        }
-//        
-//        guard !colorCubeData.isEmpty else { return nil }
-//        
-//        // 3. More efficient LUT dimensions calculation
-//        let lutWidth = Int(lutImage.size.width)
-//        let lutHeight = Int(lutImage.size.height)
-//        
-//        let (finalWidth, finalHeight) = isEnd ? (lutWidth, lutHeight) : {
-//            let ratio = Double(lutWidth) / Double(lutHeight)
-//            let lutHeightDouble = sqrt(pow(Double(lutSize), 3.0) / ratio)
-//            let height = Int(round(lutHeightDouble))
-//            let width = Int(round(ratio * Double(height)))
-//            return (width, height)
-//        }()
-//        
-//        // 4. Optimized CGImage creation
-//        let colorSpace = CGColorSpaceCreateDeviceRGB()
-//        let cgImage = colorCubeData.withUnsafeBufferPointer { buffer -> CGImage? in
-//            guard let context = CGContext(
-//                data: UnsafeMutableRawPointer(mutating: buffer.baseAddress),
-//                width: finalWidth,
-//                height: finalHeight,
-//                bitsPerComponent: 8,
-//                bytesPerRow: finalWidth * 4,
-//                space: colorSpace,
-//                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
-//                return nil
-//            }
-//            return context.makeImage()
-//        }
-//        
-//        // 5. Simplified filter creation and application
-//        guard let lutCGImage = cgImage,
-//              let (filter, _) = ColorCube.makeColorCubeFilter(
-//                lutImage: UIImage(cgImage: lutCGImage),
-//                colorSpace: colorSpace) else {
-//            print("Failed to create ColorCube filter.")
-//            return nil
-//        }
-//        
-//        // 6. Optimized image processing pipeline
-//        let ciInputImage = CIImage(cgImage: inputCGImage)
-//        filter.setValue(ciInputImage, forKey: kCIInputImageKey)
-//        
-//        guard let filteredImage = filter.outputImage else { return nil }
-//        
-//        // 7. Efficient blend filter setup
-//        let blendFilter = CIFilter(name: "CIBlendWithMask")
-//        let maskGenerator = CIFilter(name: "CIConstantColorGenerator")
-//        let maskColor = CIColor(red: CGFloat(opacity), green: CGFloat(opacity), blue: CGFloat(opacity))
-//        
-//        blendFilter?.setValue(ciInputImage, forKey: kCIInputBackgroundImageKey)
-//        blendFilter?.setValue(filteredImage, forKey: kCIInputImageKey)
-//        maskGenerator?.setValue(maskColor, forKey: kCIInputColorKey)
-//        blendFilter?.setValue(maskGenerator?.outputImage, forKey: kCIInputMaskImageKey)
-//        
-//        // 8. Final image creation with proper memory management
-//        guard let outputImage = blendFilter?.outputImage?.convertCIImageToCGImage() else {
-//            return nil
-//        }
-//        
-//        return UIImage(cgImage: outputImage).resized(to: inputUIImage.size)
-//    }
-    
     func applyLUTFilter(inputUIImage: UIImage) -> UIImage? {
-        guard let cgImage = inputUIImage.cgImage else { return nil }
-                
-        let context = CIContext()
-        let ciImage = CIImage(cgImage: cgImage)
-        
-        // Create color cube filter
-        guard let filter = CIFilter(name: "CIColorCube") else { return nil }
-        
-        // Convert SCNVector3 to float array
-        var cubeData = [Float]()
-        cubeData.reserveCapacity(vertices.count * 4)
-        
-        for vector in vertices {
-            cubeData.append(Float(vector.x))
-            cubeData.append(Float(vector.y))
-            cubeData.append(Float(vector.z))
-            cubeData.append(1.0) // Alpha channel
-        }
-        
-        // Set filter parameters
-        filter.setValue(self.currentLUTItem.lutSize, forKey: "inputCubeDimension")
-        filter.setValue(Data(bytes: &cubeData, count: cubeData.count * MemoryLayout<Float>.size),
-                       forKey: "inputCubeData")
-        filter.setValue(ciImage, forKey: kCIInputImageKey)
-        
-        // Apply filter and convert back to UIImage
-        guard let outputImage = filter.outputImage,
-              let cgOutput = context.createCGImage(outputImage, from: outputImage.extent) else {
+        // 1. Early validation
+        guard let inputCGImage = inputUIImage.cgImage,
+              let originalFileURL = self.currentLUTItem.fileURL,
+              let lutImage = UIImage(contentsOfFile: originalFileURL.path) else {
+            print("Failed to load input image or LUT image.")
             return nil
         }
         
-        return UIImage(cgImage: cgOutput)
+        // 2. Optimize color cube data creation
+        let colorCubeData: [UInt8] = vertices.flatMap { vertex in
+            [UInt8(min(max(vertex.x * 255.0, 0), 255)),
+             UInt8(min(max(vertex.y * 255.0, 0), 255)),
+             UInt8(min(max(vertex.z * 255.0, 0), 255)),
+             255]
+        }
+        
+        guard !colorCubeData.isEmpty else { return nil }
+        
+        // 3. More efficient LUT dimensions calculation
+        let lutWidth = Int(lutImage.size.width)
+        let lutHeight = Int(lutImage.size.height)
+        
+        let (finalWidth, finalHeight) = isEnd ? (lutWidth, lutHeight) : {
+            let ratio = Double(lutWidth) / Double(lutHeight)
+            let lutHeightDouble = sqrt(pow(Double(lutSize), 3.0) / ratio)
+            let height = Int(round(lutHeightDouble))
+            let width = Int(round(ratio * Double(height)))
+            return (width, height)
+        }()
+        
+        // 4. Optimized CGImage creation
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let cgImage = colorCubeData.withUnsafeBufferPointer { buffer -> CGImage? in
+            guard let context = CGContext(
+                data: UnsafeMutableRawPointer(mutating: buffer.baseAddress),
+                width: finalWidth,
+                height: finalHeight,
+                bitsPerComponent: 8,
+                bytesPerRow: finalWidth * 4,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+                return nil
+            }
+            return context.makeImage()
+        }
+        
+        // 5. Simplified filter creation and application
+        guard let lutCGImage = cgImage,
+              let (filter, _) = ColorCube.makeColorCubeFilter(
+                lutImage: UIImage(cgImage: lutCGImage),
+                colorSpace: colorSpace) else {
+            print("Failed to create ColorCube filter.")
+            return nil
+        }
+        
+        // 6. Optimized image processing pipeline
+        let ciInputImage = CIImage(cgImage: inputCGImage)
+        filter.setValue(ciInputImage, forKey: kCIInputImageKey)
+        
+        guard let filteredImage = filter.outputImage else { return nil }
+        
+        // 7. Efficient blend filter setup
+        let blendFilter = CIFilter(name: "CIBlendWithMask")
+        let maskGenerator = CIFilter(name: "CIConstantColorGenerator")
+        let maskColor = CIColor(red: CGFloat(opacity), green: CGFloat(opacity), blue: CGFloat(opacity))
+        
+        blendFilter?.setValue(ciInputImage, forKey: kCIInputBackgroundImageKey)
+        blendFilter?.setValue(filteredImage, forKey: kCIInputImageKey)
+        maskGenerator?.setValue(maskColor, forKey: kCIInputColorKey)
+        blendFilter?.setValue(maskGenerator?.outputImage, forKey: kCIInputMaskImageKey)
+        
+        // 8. Final image creation with proper memory management
+        guard let outputImage = blendFilter?.outputImage?.convertCIImageToCGImage() else {
+            return nil
+        }
+        
+        return UIImage(cgImage: outputImage).resized(to: inputUIImage.size)
     }
+    
+//    func applyLUTFilter(inputUIImage: UIImage) -> UIImage? {
+//        guard let cgImage = inputUIImage.cgImage else { return nil }
+//                
+//        let context = CIContext()
+//        let ciImage = CIImage(cgImage: cgImage)
+//        
+//        // Create color cube filter
+//        guard let filter = CIFilter(name: "CIColorCube") else { return nil }
+//        
+//        // Convert SCNVector3 to float array
+//        var cubeData = [Float]()
+//        cubeData.reserveCapacity(vertices.count * 4)
+//        
+//        for vector in vertices {
+//            cubeData.append(Float(vector.x))
+//            cubeData.append(Float(vector.y))
+//            cubeData.append(Float(vector.z))
+//            cubeData.append(1.0) // Alpha channel
+//        }
+//        
+//        // Set filter parameters
+//        filter.setValue(self.currentLUTItem.lutSize, forKey: "inputCubeDimension")
+//        filter.setValue(Data(bytes: &cubeData, count: cubeData.count * MemoryLayout<Float>.size),
+//                       forKey: "inputCubeData")
+//        filter.setValue(ciImage, forKey: kCIInputImageKey)
+//        
+//        // Apply filter and convert back to UIImage
+//        guard let outputImage = filter.outputImage,
+//              let cgOutput = context.createCGImage(outputImage, from: outputImage.extent) else {
+//            return nil
+//        }
+//        
+//        return UIImage(cgImage: cgOutput)
+//    }
     
         
     

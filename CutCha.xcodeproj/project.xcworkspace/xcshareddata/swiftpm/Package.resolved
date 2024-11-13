@@ -1,0 +1,15 @@
+{
+  "originHash" : "cbed3ce6d8d4a74dc55c570602e832b23ca8bcc8e2f36e51f81ddc006b38d998",
+  "pins" : [
+    {
+      "identity" : "shapebuilder",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ohitsdaniel/ShapeBuilder",
+      "state" : {
+        "revision" : "39f80d64136d90faf85956bf876967242b0f4663",
+        "version" : "0.1.1"
+      }
+    }
+  ],
+  "version" : 3
+}
